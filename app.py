@@ -2,32 +2,48 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-st.title("MIDAS STRESS PLOTTER")
+st.title("MIDAS STRESS & FORCEP LOTTER")
 st.markdown("_BETA TEST_")
 
-
+st.markdown("## Input Data")
+choose_displayed_data=st.radio("Pilih Data Yang Akan Di Tampilkan",
+                                ["Tegangan","Tegangan dan Momen"])
 @st.cache_data
 def load_data(file):
     data = pd.read_excel(file)
     return data
 
-uploaded_file_stress = st.file_uploader("Upload Excel Ouput Midas")
-if uploaded_file_stress is None:
-    st.info("Masukan Data")
-    st.stop()
+if choose_displayed_data == "Tegangan":
+    uploaded_file_stress = st.file_uploader("Upload Excel Ouput Tegangan Midas")
+    if uploaded_file_stress is None:
+        st.info("Masukan Data")
+        st.stop()
+    uploaded_file_station = st.file_uploader("Upload Excel Stationing")
+    if uploaded_file_station is None:
+        st.info("Masukan Data")
+        st.stop()
 
-uploaded_file_station = st.file_uploader("Upload Excel Stationing")
-if uploaded_file_station is None:
-    st.info("Masukan Data")
-    st.stop()
+if choose_displayed_data == "Tegangan dan Momen":
+    uploaded_file_stress = st.file_uploader("Upload Excel Ouput Tegangan Midas")
+    if uploaded_file_stress is None:
+        st.info("Masukan Data")
+        st.stop()
+    uploaded_file_force = st.file_uploader("Upload Excel Ouput Gaya Midas")
+    if uploaded_file_force is None:
+        st.info("Masukan Data")
+        st.stop()
+    uploaded_file_station = st.file_uploader("Upload Excel Stationing")
+    if uploaded_file_station is None:
+        st.info("Masukan Data")
+        st.stop()
 
-column_select = "Sig-xx(Summation) (kN/m²)"
 
-df_stress_input = load_data(uploaded_file_stress) ## Data Upload Input
-df_station = load_data(uploaded_file_station) ## Data Upload Stationing
+df_stress_input = load_data(uploaded_file_stress) ## Upload Data Tegangan dari Midas
+df_force_input = load_data(uploaded_file_stress) ## Upload Data Tegangan dari Midas
+df_station = load_data(uploaded_file_station) ## Upload Data Stationing
 column_list=list(df_stress_input.columns.values)
 
-df_load_case = list(df_stress_input["Load"].unique()) ## List Load Case
+df_load_case_stress = list(df_stress_input["Load"].unique()) ## List Load Case
 df_stress_point = list(df_stress_input["Section Position"].unique()) ## List Stress Point
 
 
@@ -43,21 +59,21 @@ with st.sidebar:
     "Pilih Tegangan",
     column_list)
 
-
+## TEGANGAN
 ## TAMPILAN WEB
-st.markdown("# DATA YANG DI INPUT")
+st.markdown("### Data Tegangan Hasil Input")
 st.dataframe(df_stress_input) ## Menampilkan Data Input
-st.markdown("# LOAD CASE")
+st.markdown("### Data Load Case Tegangan")
 options_load_case = st.multiselect(
-    "Pilih Load Case",df_load_case)
-st.markdown("# STATIONING")
+    "Pilih Load Case",df_load_case_stress)
+st.markdown("### Data Stationing Tegangan")
 st.dataframe(df_station) ## Menampilkan Data Stationing
 # Filter Data Per Stress Point
 df_berdasarkan_stress_point = df_stress_input[(df_stress_input["Section Position"]==stress_point)][["Load",column_select]]
 
 # Mengubah Tegangan Menjadi Per Kolom
 new_data = {}
-for load_case in df_load_case:
+for load_case in df_load_case_stress:
     df_wrap_col = df_berdasarkan_stress_point[df_berdasarkan_stress_point["Load"] == load_case][column_select]
     new_data[load_case] = df_wrap_col.values  # Mengambil nilai sebagai array
 
