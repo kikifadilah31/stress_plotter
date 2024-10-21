@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import requests
 
 # FUNGSI -------------------------------------------------------------------------------------------------------------------------------------------
 ## FUNGSI Mengubah Tegangan Menjadi Per Kolom
@@ -59,6 +60,8 @@ plotly_color_schemes = {
 all_color_schemes = sum(plotly_color_schemes.values(), [])
 
 ## FUNGSI PLOT
+import plotly.express as px
+
 def stress_plot(data_frame,  # data 
                 y_axis,  # data kolom yang di plot
                 tittle,  # judul
@@ -68,6 +71,7 @@ def stress_plot(data_frame,  # data
                 tension_limit, 
                 compression_limit, 
                 data_frame_stationing,
+                vertical_lines,  # List garis vertikal yang akan ditambahkan
                 color_scheme='Plotly'):  # Tambahkan parameter skema warna dengan default 'Plotly'
     
     # Pilih skema warna berdasarkan input pengguna atau default
@@ -78,6 +82,7 @@ def stress_plot(data_frame,  # data
     
     # Ambil warna dalam urutan dari skema yang dipilih (sesuai jumlah y_axis)
     colors = plotly_colors[:len(y_axis)]
+    
     # Membuat grafik garis
     fig_1 = px.line(
         data_frame,
@@ -136,8 +141,23 @@ def stress_plot(data_frame,  # data
                 showgrid=True,
             )
         ),
+        annotations=[
+            dict(
+                text="Midas Stress Ploter by Kiki Fadilah Tanjung",  # Watermark tetap
+                xref="paper", yref="paper",  # Koordinat relatif ke plot
+                x=0.5, y=0.05,  # Posisi watermark (tengah)
+                showarrow=False,  # Tidak menampilkan panah
+                font=dict(
+                    size=40,  # Ukuran teks watermark
+                    color="rgba(100, 100, 100)"  # Warna teks dengan transparansi
+                ),
+                xanchor="center",  # Penempatan teks pada sumbu X
+                yanchor="middle",  # Penempatan teks pada sumbu Y
+                opacity=0.3  # Transparansi teks watermark
+            )
+        ]
     )
-    
+
     # Menambahkan garis batas tegangan
     fig_1.add_shape(
         type="line",
@@ -150,9 +170,10 @@ def stress_plot(data_frame,  # data
         )
     )
     
+    # Menambahkan garis batas kompresi
     fig_1.add_shape(
         type="line",
-        x0=0, x1=df_stationing_for_plot.max(),
+        x0=0, x1=data_frame_stationing.max(),
         y0=compression_limit, y1=compression_limit,
         line=dict(
             color="red",
@@ -161,6 +182,19 @@ def stress_plot(data_frame,  # data
         )
     )
     
+    # Menambahkan beberapa garis vertikal dari daftar
+    for line_x in vertical_lines:
+        fig_1.add_shape(
+            type="line",
+            x0=line_x, x1=line_x,  # Garis vertikal memiliki x0 dan x1 yang sama
+            y0=tension_limit,
+            y1=compression_limit,
+            line=dict(
+                color="black",  # Warna garis vertikal (bisa disesuaikan)
+                width=2,  # Ketebalan garis vertikal
+            )
+        )
+    
     return fig_1
 
 
@@ -168,11 +202,16 @@ def stress_plot(data_frame,  # data
 
 # OPENING ------------------------------------------------------------------------------------------------------------------------------------------
 st.title("MIDAS STRESS & FORCE PLOTTER")
-st.markdown("_BETA TEST_")
+# DOWNLOAD FORMAT DATA
+st.markdown("# Format Input Data")
+st.link_button("Format Stationing", 'https://1drv.ms/x/s!AlOQzBonmyVTgahq57WTL43bheCZpg?e=M1EnHk')
+st.link_button("Format Data", 'https://1drv.ms/x/s!AlOQzBonmyVTgahpvnZ9ccRRSvjvfQ?e=xw2VJm')
 
+
+# INPUT DATA ------------------------------------------------------------------------------------------------------------------------------------------
 st.markdown("# Input Data")
 choose_displayed_data=st.radio("Pilih Data Yang Akan Di Tampilkan",
-                                ["Tegangan","Tegangan dan Momen"])
+                                ["Tegangan"])
 @st.cache_data
 def load_data(file):
     data = pd.read_excel(file)
@@ -215,10 +254,15 @@ stress_point_list = list(df_stress_input["Section Position"].unique()) ## List S
 
 # SIDEBAR -------------------------------------------------------------------------------------------------------------------------------------------
 with st.sidebar:
-    st.markdown("# PILIH TEGANGAN")
+    # Menampilkan link profil LinkedIn
+    st.title("Profil Developer")
+    st.markdown("Dikembangkan Oleh : [Kiki Fadilah Tanjung](https://www.linkedin.com/in/kiki-fadilah-tanjung-88460b151/)")
+
+    st.markdown("# Pilih tegangan")
     selected_stress = st.radio(
     "Pilih Tegangan",
     column_list)
+
 
 
 # TAMPILAN WEB DATA HASIL INPUT ----------------------------------------------------------------------------------------------------------------------
@@ -255,6 +299,17 @@ with col_A1:
     tick_hor_axis = st.number_input("Masukan Interval Untuk Horizontal Axis",
                                     value=10,step=10)
     skema_warna=st.selectbox("Pilih Skema Warna",all_color_schemes)
+    vertical_lines_input = st.text_input("Nilai Sta Pier (pisahkan dengan koma):", 
+                                         value="10, 20, 30")
+    
+    # Konversi input teks menjadi list angka
+try:
+    garis_pier = [float(x) for x in vertical_lines_input.split(",")]
+except ValueError:
+    st.error("Harap masukkan angka yang valid, dipisahkan dengan koma.")
+    garis_pier = []
+
+
 with col_A2:
     tension_limit = st.number_input("Masukan Batasan Tegangan Tarik",
                                     value=3000,
@@ -291,6 +346,7 @@ DIAGRAM_ALL=stress_plot(
     tension_limit, #batas tarik
     compression_limit, #batas tekan
     df_stationing_for_plot,
+    garis_pier,
     skema_warna
     )
 
@@ -302,7 +358,6 @@ st.dataframe(pd.concat([df_station,df_tegangan_per_loadcase_selected_stress_poin
 
 st.markdown("## Diagram Per Load Case")
 ## Data Hanya Load case yang dipilih
-st.markdown("### Data Load Case Tegangan")
 col_B1,col_B2=st.columns(2)
 with col_B1:
     load_case_selector = st.selectbox(
@@ -349,8 +404,10 @@ DIAGRAM_PER_LC=stress_plot(
     tension_limit, #batas tarik
     compression_limit, #batas tekan
     df_stationing_for_plot,
+    garis_pier,
     skema_warna_2
     )
 st.plotly_chart(DIAGRAM_PER_LC,True)
 
+st.markdown("### Data Load Case Tegangan")
 st.dataframe(df_tegangan_per_loadcase_selected_stress_point_horizontal_stacked) # Tampilkan hasil h stack
