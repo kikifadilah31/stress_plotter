@@ -272,21 +272,21 @@ st.dataframe(df_stress_input) ## Menampilkan Data Input
 st.markdown("## Data Stationing Tegangan")
 st.dataframe(df_station) ## Menampilkan Data Stationing
 
-st.markdown("## Data Tegangan Per Stress Point")
-# Loop through each stress point and process the data
-for stress_point in stress_point_list:
-    st.markdown(f"### {selected_stress} Stress Point {stress_point}")
-    
-    # Menyiapkan dataframe untuk setiap stress point
-    df_tegangan_per_stress_point = data_tegangan_per_column(
-        load_case_list,
-        df_stress_input,
-        stress_point,
-        selected_stress
-    )
-    
-    # Menampilkan dataframe setiap stress point
-    st.dataframe(pd.concat([df_station, df_tegangan_per_stress_point], axis=1)) #Menampilkan data tegangan per kombinasi sesuai tegangan yang dipilih
+#st.markdown("## Data Tegangan Per Stress Point")
+## Loop through each stress point and process the data
+#for stress_point in stress_point_list:
+#    st.markdown(f"### {selected_stress} Stress Point {stress_point}")
+#    
+#    # Menyiapkan dataframe untuk setiap stress point
+#    df_tegangan_per_stress_point = data_tegangan_per_column(
+#        load_case_list,
+#        df_stress_input,
+#        stress_point,
+#        selected_stress
+#    )
+#    
+#    # Menampilkan dataframe setiap stress point
+#    st.dataframe(pd.concat([df_station, df_tegangan_per_stress_point], axis=1)) #Menampilkan data tegangan per kombinasi sesuai tegangan yang dipilih
 
 st.markdown("# Plot Diagram")
 
